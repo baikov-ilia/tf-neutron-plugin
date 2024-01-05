@@ -77,6 +77,7 @@ from neutron.extensions import portbindings
 from neutron.extensions import securitygroup
 from neutron_plugin_contrail.extensions import serviceinterface
 from neutron_plugin_contrail.extensions import vfbinding
+from neutron_lib.callbacks import events
 from neutron import neutron_plugin_base_v2
 try:
     from neutron.openstack.common import importutils
@@ -465,14 +466,20 @@ class NeutronPluginContrailCoreBase(neutron_plugin_base_v2.NeutronPluginBaseV2,
         port = self._update_resource('port', context, port_id, port)
         project_id = port.get('tenant_id') or port.get('project_id')
         port['tenant_id'] = project_id
-        kwargs = {
+        # this is deprecated payload format
+        payload_deprecated = {
             'context': context,
             'port': port,
             'original_port': original_port,
         }
+        
+        payload = events.DBEventPayload(
+                                 context,
+                                 resource_id=port['id'],
+                                 states=(original_port, port,))
         # notify renamed to publish according to docs
         # kwargs argument brake everything for some reason
-        registry.publish(resources.PORT, events.AFTER_UPDATE, self)
+        registry.publish(resources.PORT, events.AFTER_UPDATE, self, payload = payload)
         return port
 
     def delete_port(self, context, port_id):
