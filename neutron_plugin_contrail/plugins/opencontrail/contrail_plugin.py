@@ -14,6 +14,7 @@
 #
 # @author: Hampapur Ajay, Praneet Bachheti, Rudra Rugge, Atul Moghe
 import requests
+import json
 
 try:
     from neutron.api.v2.attributes import ATTR_NOT_SPECIFIED
@@ -243,8 +244,9 @@ class NeutronPluginContrailCoreV2(plugin_base.NeutronPluginContrailCoreBase):
     def _request_backend(self, context, data_dict, obj_name, action):
         context_dict = self._encode_context(context, action, obj_name)
         data = json.dumps({'context': context_dict, 'data': data_dict})
-
+        LOG.debug("LOGGING DATA %s", data)
         url_path = "%s/%s" % (self.PLUGIN_URL_PREFIX, obj_name)
+        LOG.debug("URL PATH %s", url_path)
         response = self._relay_request(url_path, data=data)
         try:
             return response.status_code, response.json()
@@ -258,10 +260,16 @@ class NeutronPluginContrailCoreV2(plugin_base.NeutronPluginContrailCoreBase):
                  'type': apitype,
                  'tenant_id': getattr(context, 'tenant_id', None),
                  'request_id': getattr(context, 'request_id', None)}
+        
+        LOG.debug("CONTEXT DUMP")
+        LOG.debug(context.__dict__)
         if context.roles:
             cdict['roles'] = context.roles
-        if context.tenant:
-            cdict['tenant'] = context.tenant
+            
+        # this part also brake plugin
+        
+        # if hasattr(context,'tenant'):
+        #     cdict['tenant'] = context.tenant
         return cdict
 
     def _encode_resource(self, resource_id=None, resource=None, fields=None,
